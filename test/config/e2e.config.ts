@@ -25,6 +25,7 @@ export const PERF_BUDGET_MS = Number(process.env.PERF_BUDGET_MS ?? 2_000);
 export const DEFAULT_HEADERS: Record<string, string> = {
   'Content-Type': 'application/json',
   Accept: 'application/json',
+  'User-Agent': 'runner-app-e2e',
 };
 
 /** Dominio reservado para los emails de prueba (lo usa el cleanup). */
@@ -33,6 +34,9 @@ export const E2E_EMAIL_DOMAIN = 'e2e.test';
 export const IS_LOCAL = /^(https?:\/\/)?(localhost|127\.0\.0\.1|0\.0\.0\.0)(:|$|\/)/.test(
   BASE_URL,
 );
+
+/** Reintentos por test (útil contra una BD remota con latencia variable). */
+export const TEST_RETRY = Number(process.env.E2E_RETRY ?? (IS_LOCAL ? 0 : 1));
 
 export interface ApiResponse<T = unknown> {
   status: number;

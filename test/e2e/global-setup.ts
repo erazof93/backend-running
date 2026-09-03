@@ -17,15 +17,55 @@ if (existsSync(envTest)) {
   }
 }
 
-const { API_URL, BASE_URL, IS_LOCAL } = await import('../config/e2e.config.js');
+const { BASE_URL, IS_LOCAL } = await import('../config/e2e.config.js');
+
+const HEALTH_URL = `${BASE_URL}/health`;
+
+interface Probe {
+  up: boolean;
+  reason: string;
+}
+
+/**
+ * Comprueba que en `BASE_URL` responde NUESTRA app y no otra cosa (típico:
+ * la página "Application not found" del edge de Railway cuando la URL apunta
+ * a un proyecto que no existe / no está desplegado).
+ */
+async function probeServer(): Promise<Probe> {
+  let res: Response;
+  try {
+    res = await fetch(HEALTH_URL, { method: 'GET' });
+  } catch (err) {
+    return { up: false, reason: `sin conexión a ${HEALTH_URL} (${(err as Error).message})` };
+  }
+
+  if (res.headers.get('x-railway-fallback') === 'true') {
+    return {
+      up: false,
+      reason:
+        `${BASE_URL} devuelve el fallback del edge de Railway ("Application not found"): ` +
+        `no hay ningún servicio desplegado en esa URL`,
+    };
+  }
+
+  if (res.status !== 200) {
+    return { up: false, reason: `GET /health respondió ${res.status} (se esperaba 200)` };
+  }
+
+  try {
+    const body = (await res.json()) as { status?: string };
+    if (body.status !== 'ok') {
+      return { up: false, reason: `GET /health respondió status="${body.status}"` };
+    }
+  } catch {
+    return { up: false, reason: 'GET /health no devolvió JSON válido' };
+  }
+
+  return { up: true, reason: 'ok' };
+}
 
 async function isServerUp(): Promise<boolean> {
-  try {
-    const res = await fetch(API_URL, { method: 'GET' });
-    return res.status > 0;
-  } catch {
-    return false;
-  }
+  return (await probeServer()).up;
 }
 
 async function waitForServer(timeoutMs: number): Promise<boolean> {
@@ -56,18 +96,24 @@ function killProcessTree(pid: number): void {
 }
 
 export default async function setup(): Promise<() => Promise<void>> {
-  if (await isServerUp()) {
+  const probe = await probeServer();
+  if (probe.up) {
     // eslint-disable-next-line no-console
-    console.log(`[e2e] usando servidor ya activo en ${BASE_URL}`);
+    console.log(`[e2e] servidor OK en ${BASE_URL} (GET /health -> 200)`);
     return async () => {};
   }
 
   if (!IS_LOCAL) {
     throw new Error(
-      `[e2e] no hay respuesta de ${API_URL}. Para staging/prod el servidor ` +
-        `debe estar desplegado y accesible antes de correr la suite.`,
+      `[e2e] el target de staging/prod no está listo.\n` +
+        `      BASE_URL = ${BASE_URL}\n` +
+        `      motivo   = ${probe.reason}\n` +
+        `      Revisa que la app esté desplegada y que BASE_URL apunte a la URL real ` +
+        `(edita el script "test:e2e:staging" en package.json o define BASE_URL en el entorno).`,
     );
   }
+  // eslint-disable-next-line no-console
+  console.log(`[e2e] servidor local no responde (${probe.reason}); arrancándolo…`);
 
   // --- Arranque local automático ---------------------------------------------
   const mainJs = resolve(PROJECT_ROOT, 'dist', 'main.js');
