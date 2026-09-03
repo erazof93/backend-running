@@ -1,0 +1,189 @@
+// Prisma schema - Runner App Backend
+// Docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String   @id @default(uuid())
+  email          String   @unique
+  passwordHash   String
+  name           String
+  bio            String?
+  profilePicture String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  followers   Follow[]        @relation("UserFollowers")
+  following   Follow[]        @relation("UserFollowing")
+  activities  Activity[]
+  coach       Coach?
+  coachLinks  CoachAthlete[]  @relation("AthleteLinks")
+  kudos       Kudo[]
+  comments    Comment[]
+
+  @@map("users")
+}
+
+enum ActivityType {
+  run
+  bike
+  swim
+}
+
+model Activity {
+  id           String       @id @default(uuid())
+  userId       String
+  title        String
+  description  String?
+  activityType ActivityType
+  distance     Decimal      @db.Decimal(10, 2)
+  duration     Int
+  notes        String?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  gpsPoints GpsPoint[]
+  feedback  Feedback[]
+  kudos     Kudo[]
+  comments  Comment[]
+
+  @@index([userId])
+  @@map("activities")
+}
+
+model Kudo {
+  id         String   @id @default(uuid())
+  userId     String
+  activityId String
+  createdAt  DateTime @default(now())
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  activity Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, activityId])
+  @@index([activityId])
+  @@map("kudos")
+}
+
+model Comment {
+  id         String   @id @default(uuid())
+  userId     String
+  activityId String
+  text       String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  activity Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+
+  @@index([activityId])
+  @@index([userId])
+  @@map("comments")
+}
+
+model GpsPoint {
+  id         String   @id @default(uuid())
+  activityId String
+  latitude   Decimal  @db.Decimal(9, 6)
+  longitude  Decimal  @db.Decimal(9, 6)
+  altitude   Decimal? @db.Decimal(8, 2)
+  timestamp  DateTime
+  order      Int
+  createdAt  DateTime @default(now())
+
+  activity Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+
+  @@index([activityId])
+  @@map("gps_points")
+}
+
+model Follow {
+  id          String   @id @default(uuid())
+  followerId  String
+  followingId String
+  createdAt   DateTime @default(now())
+
+  follower  User @relation("UserFollowing", fields: [followerId], references: [id], onDelete: Cascade)
+  following User @relation("UserFollowers", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@unique([followerId, followingId])
+  @@index([followerId])
+  @@index([followingId])
+  @@map("follows")
+}
+
+enum CoachAthleteStatus {
+  active
+  inactive
+}
+
+model Coach {
+  id        String   @id
+  bio       String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user     User           @relation(fields: [id], references: [id], onDelete: Cascade)
+  athletes CoachAthlete[]
+  plans    TrainingPlan[]
+  feedback Feedback[]
+
+  @@map("coaches")
+}
+
+model CoachAthlete {
+  id         String             @id @default(uuid())
+  coachId    String
+  athleteId  String
+  assignedAt DateTime           @default(now())
+  status     CoachAthleteStatus @default(active)
+  notes      String?
+
+  coach   Coach @relation(fields: [coachId], references: [id], onDelete: Cascade)
+  athlete User  @relation("AthleteLinks", fields: [athleteId], references: [id], onDelete: Cascade)
+
+  @@unique([coachId, athleteId])
+  @@index([coachId])
+  @@index([athleteId])
+  @@map("coach_athletes")
+}
+
+model TrainingPlan {
+  id          String   @id @default(uuid())
+  coachId     String
+  name        String
+  weekStart   DateTime
+  description  String?
+  exercises   Json
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  coach Coach @relation(fields: [coachId], references: [id], onDelete: Cascade)
+
+  @@index([coachId])
+  @@map("training_plans")
+}
+
+model Feedback {
+  id         String   @id @default(uuid())
+  activityId String
+  coachId    String
+  text       String
+  rating     Int?
+  createdAt  DateTime @default(now())
+
+  activity Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  coach    Coach    @relation(fields: [coachId], references: [id], onDelete: Cascade)
+
+  @@index([activityId])
+  @@index([coachId])
+  @@map("feedback")
+}

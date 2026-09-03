@@ -1,0 +1,202 @@
+╔════════════════════════════════════════════════════════════════════════════════╗
+║                                                                                ║
+║                  🚀 INTEGRACIÓN RÁPIDA - TU PROYECTO EXACTO                    ║
+║                                                                                ║
+║                           backend-running/                                     ║
+║                                                                                ║
+╚════════════════════════════════════════════════════════════════════════════════╝
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📊 LO QUE TIENES AHORA
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+backend-running/
+├── node_modules/
+├── src/
+├── test/
+├── .gitignore
+├── CLAUDE.md               ← ¿VERIFICAR SI ES MÍO?
+├── docker-compose.yml
+├── nest-cli.json
+├── oxlint.json
+├── package.json
+├── pnpm-lock.yaml
+├── pnpm-workspace.yaml
+├── README.md
+├── tsconfig.build.json
+├── tsconfig.json
+├── vitest.config.e2e.ts
+└── vitest.config.ts
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✅ LO QUE NECESITAS HACER (4 PASOS)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+PASO 1️⃣  CREAR CARPETA /docs
+════════════════════════════════════════════════════════════════════════════
+
+Crea en: backend-running/docs/
+
+Con subcarpetas:
+  ├── backend-running/docs/
+  │   ├── README.md
+  │   ├── guias/
+  │   ├── api/
+  │   ├── database/
+  │   └── deployment/
+
+
+PASO 2️⃣  COPIAR 4 ARCHIVOS A RAÍZ
+════════════════════════════════════════════════════════════════════════════
+
+Desde: /outputs/runner-app-docs/
+A: backend-running/
+
+Copiar ESTOS 4 archivos:
+  ├─ ESTRUCTURA.md           → backend-running/ESTRUCTURA.md
+  ├─ ROADMAP.md              → backend-running/ROADMAP.md
+  ├─ START_HERE.txt          → backend-running/START_HERE.txt
+  └─ CLAUDE.md               → backend-running/CLAUDE.md (si no lo tienes)
+
+
+PASO 3️⃣  COPIAR CONTENIDO A /docs
+════════════════════════════════════════════════════════════════════════════
+
+Desde: /outputs/runner-app-docs/docs/
+A: backend-running/docs/
+
+Copiar TODO:
+  ├─ docs/README.md          →  backend-running/docs/README.md
+  ├─ docs/guias/*            →  backend-running/docs/guias/
+  ├─ docs/api/*              →  backend-running/docs/api/
+  ├─ docs/database/*         →  backend-running/docs/database/
+  └─ docs/deployment/*       →  backend-running/docs/deployment/
+
+
+PASO 4️⃣  ACTUALIZAR README.md
+════════════════════════════════════════════════════════════════════════════
+
+Abre: backend-running/README.md
+
+Agrega AL PRINCIPIO (antes de todo):
+
+─────────────────────────────────────────────────────────────
+
+# 🏃 Backend Running - Runner App Backend
+
+**Documentación profesional** → [CLAUDE.md](./CLAUDE.md)
+
+## 📚 Documentación
+
+- **[CLAUDE.md](./CLAUDE.md)** ⭐ Hub central
+- **[ESTRUCTURA.md](./ESTRUCTURA.md)** - Árbol del proyecto
+- **[ROADMAP.md](./ROADMAP.md)** - 8 fases
+- **[docs/](./docs/)** - Documentación técnica
+
+---
+
+(aquí va el resto de tu README)
+
+─────────────────────────────────────────────────────────────
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📋 VERIFICACIÓN - DESPUÉS DE COPIAR
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+En backend-running/ deben existir ESTOS archivos:
+
+  ✅ CLAUDE.md
+  ✅ ESTRUCTURA.md
+  ✅ ROADMAP.md
+  ✅ START_HERE.txt
+  ✅ README.md (actualizado)
+  ✅ docs/README.md
+  ✅ docs/guias/ (carpeta con archivos)
+  ✅ docs/api/ (carpeta con archivos)
+  ✅ docs/database/ (carpeta con archivos)
+  ✅ docs/deployment/ (carpeta con archivos)
+
+Si todo existe → ✅ INTEGRACIÓN COMPLETA
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🎯 RESULTADO FINAL
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+backend-running/
+├── 📚 NUEVO - Documentación profesional
+│   ├── CLAUDE.md
+│   ├── ESTRUCTURA.md
+│   ├── ROADMAP.md
+│   ├── START_HERE.txt
+│   └── docs/
+│       ├── README.md
+│       ├── guias/ (5 docs)
+│       ├── api/ (6 docs)
+│       ├── database/ (4 docs)
+│       └── deployment/ (4 docs)
+│
+├── 💻 SIN CAMBIOS - Tu código existente
+│   ├── src/
+│   ├── test/
+│   ├── node_modules/
+│   ├── package.json
+│   ├── pnpm-lock.yaml
+│   ├── pnpm-workspace.yaml
+│   ├── tsconfig.json
+│   ├── vitest.config.*
+│   ├── nest-cli.json
+│   ├── docker-compose.yml
+│   └── (resto de archivos)
+│
+└── ✨ ACTUALIZADO - README con links
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+⏱️  TIEMPO TOTAL
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Crear carpeta /docs:           2 minutos
+Copiar 4 archivos:            2 minutos
+Copiar contenido /docs:       3 minutos
+Actualizar README.md:         3 minutos
+                             ──────────
+TOTAL:                       10 minutos
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🚀 DESPUÉS DE INTEGRAR
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. Abre: backend-running/CLAUDE.md
+2. Lee completamente (20 minutos)
+3. Entiende las 8 fases
+4. Di: "He terminado la integración"
+5. Yo verifico y empezamos FASE 2 (Auth) 🚀
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+❓ PREGUNTAS FRECUENTES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+P: ¿Afecta pnpm?
+R: No, es solo documentación.
+
+P: ¿Afecta los tests (vitest)?
+R: No, tests siguen igual.
+
+P: ¿Afecta el código en src/?
+R: No, nada cambia en src/.
+
+P: ¿Afecta docker-compose?
+R: No, sigue igual.
+
+P: ¿Qué pasa si cometo error copiando?
+R: No importa, es solo docs. Puedes borrar y copiar de nuevo.
+
+P: ¿Dónde está /outputs/?
+R: En tu carpeta de descargas o donde guardaste los archivos.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+¿LISTO PARA EMPEZAR? ¡Adelante! 💪
+
+Haz los 4 pasos y luego avisame: "He terminado la integración"

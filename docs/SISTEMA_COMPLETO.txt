@@ -1,0 +1,321 @@
+╔════════════════════════════════════════════════════════════════════════════════╗
+║                                                                                ║
+║                      🎯 SISTEMA DE DESARROLLO COMPLETO                        ║
+║                                                                                ║
+║               CLI Workflow + Auditoría + Actualización de Roadmap             ║
+║                                                                                ║
+╚════════════════════════════════════════════════════════════════════════════════╝
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🏗️ ARQUITECTURA DEL FLUJO
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+        ┌─────────────────────────────────────────────────────┐
+        │                                                     │
+        │  TÚ (Usuario/Desarrollador)                        │
+        │  └─ Ejecutas comandos CLI                          │
+        │     (nest generate, mkdir, pnpm test, etc)        │
+        │                                                     │
+        └────────────────┬────────────────────────────────────┘
+                         │
+                         ↓
+        ┌─────────────────────────────────────────────────────┐
+        │                                                     │
+        │  YO (Claude Principal)                             │
+        │  └─ Doy prompts exactos para cada paso             │
+        │     └─ 10 pasos: CLI → DTOs → Tests → Build       │
+        │     └─ Con código completo listo para copiar/pegar │
+        │                                                     │
+        └────────────────┬────────────────────────────────────┘
+                         │
+                         ↓
+        ┌─────────────────────────────────────────────────────┐
+        │                                                     │
+        │  Código completado en tu proyecto                  │
+        │  ✅ Tests: Pasando                                  │
+        │  ✅ Build: Exitoso                                  │
+        │  ✅ Swagger: Completo                               │
+        │                                                     │
+        └────────────────┬────────────────────────────────────┘
+                         │
+                         ↓
+        ┌─────────────────────────────────────────────────────┐
+        │                                                     │
+        │  SUB AGENTE (Auditor)                              │
+        │  └─ Recibe código y output de tests                │
+        │  └─ Ejecuta checklist de 9 puntos                  │
+        │  └─ ✅ Aprobado o ❌ Rechazado                      │
+        │                                                     │
+        └────────────────┬────────────────────────────────────┘
+                         │
+                    ✅ SI PASA
+                         │
+                         ↓
+        ┌─────────────────────────────────────────────────────┐
+        │                                                     │
+        │  SUB AGENTE actualiza CLAUDE.md                    │
+        │  └─ Marca módulo como ✅ COMPLETADO               │
+        │  └─ Documenta tests, coverage, endpoints           │
+        │  └─ Indica PRÓXIMO módulo                          │
+        │                                                     │
+        └────────────────┬────────────────────────────────────┘
+                         │
+                         ↓
+        ┌─────────────────────────────────────────────────────┐
+        │                                                     │
+        │  LISTO PARA SIGUIENTE MÓDULO                       │
+        │  └─ Inicio ciclo nuevamente                        │
+        │     (Auth → Users → Activities → etc.)             │
+        │                                                     │
+        └─────────────────────────────────────────────────────┘
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📋 DOCUMENTOS CREADOS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📖 Para TÍ (Usuario):
+  1. CLI_WORKFLOW.md
+     └─ Cómo vamos a trabajar
+     └─ Estructura del flujo
+     └─ Ejemplo con Auth module
+
+📖 Para SUB AGENTE:
+  2. AUDIT_AGENT_INSTRUCTIONS.md
+     └─ 9 puntos de auditoría
+     └─ Cómo fallar/pasar
+     └─ Cómo actualizar CLAUDE.md
+     └─ Qué reportar
+
+📖 Para MÍ (Claude Principal):
+  3. PROMPT_TEMPLATE.md
+     └─ Template exacto de cómo daré prompts
+     └─ Ejemplo completo: Auth module
+     └─ 10 pasos del workflow
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🔄 CICLO COMPLETO - EJEMPLO PRÁCTICO
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+DÍA 1 - FASE 2: AUTH MODULE
+═════════════════════════════════════════════════════════════════════════════
+
+08:00 AM
+────────
+TÚ: "Empieza FASE 2 - Auth"
+
+08:05 AM
+────────
+YO doy el PROMPT_TEMPLATE:
+
+[LARGO] Contiene:
+  ✅ PASO 1: CLI commands exactos
+  ✅ PASO 2-6: Código para cada archivo
+  ✅ PASO 7-9: Tests, build, verificación
+  ✅ PASO 10: Cómo avisar al auditor
+
+08:10 AM
+────────
+TÚ ejecutas:
+  $ nest generate module modules/auth
+  $ nest generate controller modules/auth
+  $ nest generate service modules/auth
+  $ mkdir -p src/modules/auth/{dto,entities,strategies}
+
+08:15 AM
+────────
+TÚ copias código:
+  - auth.module.ts
+  - auth.controller.ts
+  - auth.service.ts
+  - register.dto.ts
+  - login.dto.ts
+  - auth.service.spec.ts
+
+08:45 AM
+────────
+TÚ ejecutas:
+  $ pnpm test src/modules/auth
+  $ pnpm build
+  $ pnpm start:dev
+
+08:50 AM
+────────
+TÚ reportas:
+  "✅ Auth module completo - 9/9 tests pasando, 92% coverage"
+
+09:00 AM
+────────
+SUB AGENTE audita:
+  ✅ TypeScript: Sin errores
+  ✅ Tests: Pasando
+  ✅ Coverage: 92%
+  ✅ Build: Exitoso
+  ✅ Swagger: Completo
+  ✅ Endpoints: Funcionan
+  ✅ Integración: Correcta
+  ✅ DTOs: Validación completa
+  ✅ Excepciones: HTTP correctas
+
+09:05 AM
+────────
+SUB AGENTE actualiza CLAUDE.md:
+
+  ## 🔴 FASE 2: AUTENTICACIÓN (AUTH)
+  
+  **Status:** ✅ COMPLETADA
+  **Duración:** 1 hora
+  **Tests:** 9/9 pasando ✅
+  **Coverage:** 92% ✅
+  
+  ✅ Módulos creados
+  ✅ 5 endpoints funcionales
+  ✅ DTOs con validación
+  ✅ Tests unitarios completos
+  ✅ Swagger documentation
+  ✅ Error handling correcto
+  
+  **Próximo:** 🟡 FASE 3 - Users Module
+
+09:10 AM
+────────
+Yo reporto:
+  "Auth aprobado ✅ Listo para FASE 3"
+
+09:15 AM
+────────
+CYCLE REPITE:
+  TÚ: "Empieza FASE 3 - Users"
+  YO: [Doy nuevo PROMPT_TEMPLATE para Users]
+  ... (repetir ciclo)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📊 VENTAJAS DEL SISTEMA
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✅ CLI-First
+   └─ Usas comandos reales de NestJS
+   └─ No hay abstracciones
+   └─ Aprendes mientras construyes
+
+✅ Auditoría integrada
+   └─ Cada módulo es verificado antes de pasar
+   └─ 9 puntos de calidad
+   └─ No pasa code smelly
+
+✅ Documentación viva
+   └─ CLAUDE.md se actualiza automáticamente
+   └─ Siempre sabes en qué fase estás
+   └─ Progreso transparente
+
+✅ Escalable
+   └─ Funciona para 5, 50 o 500 módulos
+   └─ Mismo workflow siempre
+   └─ Reproducible en otros proyectos
+
+✅ Profesional
+   └─ Parece equipo real de desarrollo
+   └─ Tests + Auditoría + Documentación
+   └─ Production-ready desde el inicio
+
+✅ Rápido
+   └─ 1 hora por módulo promedio
+   └─ 6 semanas para todo el backend
+   └─ 80+ endpoints funcionales
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🎯 CÓMO EMPEZAR
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+PASO 1: Lee los 3 documentos
+  1. CLI_WORKFLOW.md
+  2. AUDIT_AGENT_INSTRUCTIONS.md
+  3. PROMPT_TEMPLATE.md
+
+PASO 2: Integra documentación a tu proyecto
+  (sigue QUICK_INTEGRATION.txt)
+
+PASO 3: Abre CLAUDE.md en tu proyecto
+
+PASO 4: Di cuando estés listo:
+  "Integración completa y listo para FASE 2 con CLI workflow"
+
+PASO 5: Yo empiezo a darte prompts
+  "Aquí está el PROMPT_TEMPLATE para AUTH MODULE..."
+
+PASO 6: Ejecutas comandos y copias código
+
+PASO 7: Tests pasan y reportas
+
+PASO 8: SUB AGENTE audita y actualiza CLAUDE.md
+
+PASO 9: Siguiente módulo (repite 5-8)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+⏱️ TIMELINE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Hoy:
+  - 10 min: Leer los 3 documentos
+  - 10 min: Integrar a proyecto
+  
+Semana 1:
+  - 1 hora: FASE 2 - Auth ✅
+  - 0.5 hora: FASE 3 - Users ✅
+  
+Semana 2:
+  - 1.5 horas: FASE 4 - Activities ✅
+  - 1 hora: FASE 5 - Coach ✅
+  
+Semana 3:
+  - 1 hora: FASE 6 - Community ✅
+  - 1 hora: FASE 7 - Testing ✅
+  
+Semana 4:
+  - 1 hora: FASE 8 - Deploy ✅
+
+TOTAL: ~6 semanas, 40-50 horas
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✨ RESULTADO FINAL
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Después de 6 semanas:
+
+backend-running/
+├── 📚 Documentación profesional
+│   └─ CLAUDE.md con roadmap completo
+│
+├── 💻 5 módulos completos
+│   ├─ Auth (5 endpoints, 9 tests)
+│   ├─ Users (5 endpoints, 8 tests)
+│   ├─ Activities (7 endpoints, 12 tests)
+│   ├─ Coach (5 endpoints, 8 tests)
+│   └─ Community (7 endpoints, 10 tests)
+│
+├── 🧪 Tests
+│   ├─ 52 tests unitarios
+│   ├─ 20 tests E2E
+│   └─ 85%+ coverage
+│
+├── 📖 API
+│   ├─ 30+ endpoints
+│   ├─ Swagger docs completos
+│   └─ Error handling
+│
+└── 🚀 Production-Ready
+    ├─ Código auditorado
+    ├─ Tests pasando
+    ├─ Documentación completa
+    └─ Listo para deploy
+
+═════════════════════════════════════════════════════════════════════════════════
+
+¿ENTENDIDO?
+
+Cuando estés listo:
+  1. Lee los 3 documentos (20 minutos)
+  2. Integra a tu proyecto (10 minutos)
+  3. Avisame: "Listo para FASE 2"
+  4. Empezamos con prompts CLI 🚀
+
+═════════════════════════════════════════════════════════════════════════════════
