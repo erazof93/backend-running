@@ -1,5 +1,10 @@
 import { defineConfig } from 'vitest/config';
 import tsconfigPaths from 'vite-tsconfig-paths';
+import { loadEnvTest } from './test/config/load-env.js';
+
+// Carga .env.test ANTES de leer BASE_URL, para que `test.env` (abajo) llegue
+// a los workers con el valor correcto.
+loadEnvTest();
 
 const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
 const API_PREFIX = process.env.API_PREFIX || '/api/v1';
@@ -17,7 +22,12 @@ export default defineConfig({
     globalSetup: ['test/e2e/global-setup.ts'],
     // Se inyecta explícitamente en los workers (no dependemos de la herencia
     // de process.env al forkear).
-    env: { BASE_URL, API_PREFIX, PERF_BUDGET_MS },
+    env: {
+      BASE_URL,
+      API_PREFIX,
+      PERF_BUDGET_MS,
+      E2E_REQUIRE_REMOTE: process.env.E2E_REQUIRE_REMOTE ?? '',
+    },
     testTimeout: 30_000,
     hookTimeout: 60_000,
     retry: RETRY,

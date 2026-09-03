@@ -1,21 +1,15 @@
 import { spawn, spawnSync, type ChildProcess } from 'node:child_process';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { loadEnvTest } from '../config/load-env.js';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const PROJECT_ROOT = resolve(HERE, '..', '..');
 
-// Carga .env.test (si existe) ANTES de leer la config, sin dependencias.
-const envTest = resolve(PROJECT_ROOT, '.env.test');
-if (existsSync(envTest)) {
-  for (const line of readFileSync(envTest, 'utf8').split('\n')) {
-    const m = line.match(/^\s*([A-Z0-9_]+)\s*=\s*(.*)\s*$/i);
-    if (m && !process.env[m[1]]) {
-      process.env[m[1]] = m[2].replace(/^["']|["']$/g, '');
-    }
-  }
-}
+loadEnvTest();
+
+const REQUIRE_REMOTE = process.env.E2E_REQUIRE_REMOTE === '1';
 
 const { BASE_URL, IS_LOCAL } = await import('../config/e2e.config.js');
 
@@ -48,17 +42,19 @@ async function probeServer(): Promise<Probe> {
     };
   }
 
-  if (res.status !== 200) {
-    return { up: false, reason: `GET /health respondió ${res.status} (se esperaba 200)` };
+  let body: { status?: string; db?: string; hint?: string } = {};
+  try {
+    body = (await res.json()) as typeof body;
+  } catch {
+    return { up: false, reason: `GET /health (${res.status}) no devolvió JSON válido` };
   }
 
-  try {
-    const body = (await res.json()) as { status?: string };
-    if (body.status !== 'ok') {
-      return { up: false, reason: `GET /health respondió status="${body.status}"` };
-    }
-  } catch {
-    return { up: false, reason: 'GET /health no devolvió JSON válido' };
+  if (res.status !== 200 || body.status !== 'ok') {
+    const extra = [body.db && `db=${body.db}`, body.hint].filter(Boolean).join(' — ');
+    return {
+      up: false,
+      reason: `GET /health -> ${res.status} status="${body.status}"${extra ? ` (${extra})` : ''}`,
+    };
   }
 
   return { up: true, reason: 'ok' };
@@ -66,6 +62,50 @@ async function probeServer(): Promise<Probe> {
 
 async function isServerUp(): Promise<boolean> {
   return (await probeServer()).up;
+}
+
+/**
+ * Comprobación real de que la API funciona end-to-end (no sólo `/health`):
+ * registra un usuario desechable y lo borra. Si falla, aborta la suite con el
+ * error EXACTO en vez de dejar 90 tests "skipped" por un `beforeAll` que revienta.
+ */
+async function smokeCheck(): Promise<void> {
+  const base = `${BASE_URL}${process.env.API_PREFIX || '/api/v1'}`;
+  const email = `e2e-smoke-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@e2e.test`;
+  const headers = { 'Content-Type': 'application/json' };
+
+  const reg = await fetch(`${base}/auth/register`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ email, password: 'password123', name: 'E2E Smoke' }),
+  });
+  const text = await reg.text();
+
+  if (reg.status !== 201) {
+    let hint = '';
+    if (reg.status === 500) {
+      hint =
+        '\n      500 en /auth/register con /health OK suele ser MIGRACIONES NO APLICADAS ' +
+        'en la BD de staging.\n' +
+        '      Arréglalo en el deploy: `prisma migrate deploy` contra DATABASE_URL ' +
+        '(conexión DIRECTA, puerto 5432, no el pooler 6543).';
+    }
+    throw new Error(
+      `[e2e] smoke check falló: POST ${base}/auth/register -> ${reg.status} ${text}${hint}`,
+    );
+  }
+
+  try {
+    const { accessToken } = JSON.parse(text) as { accessToken?: string };
+    if (accessToken) {
+      await fetch(`${base}/auth/me`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+    }
+  } catch {
+    /* el borrado del usuario smoke es best-effort */
+  }
 }
 
 async function waitForServer(timeoutMs: number): Promise<boolean> {
@@ -96,10 +136,22 @@ function killProcessTree(pid: number): void {
 }
 
 export default async function setup(): Promise<() => Promise<void>> {
+  if (REQUIRE_REMOTE && IS_LOCAL) {
+    throw new Error(
+      `[e2e] \`test:e2e:staging\` necesita una URL remota real.\n` +
+        `      BASE_URL actual = ${BASE_URL} (es local).\n` +
+        `      Edita .env.test y pon: BASE_URL=https://<tu-app>.up.railway.app\n` +
+        `      (o exporta BASE_URL en el entorno antes de correr el comando).`,
+    );
+  }
+
   const probe = await probeServer();
   if (probe.up) {
     // eslint-disable-next-line no-console
     console.log(`[e2e] servidor OK en ${BASE_URL} (GET /health -> 200)`);
+    await smokeCheck();
+    // eslint-disable-next-line no-console
+    console.log('[e2e] smoke check OK (register + delete)');
     return async () => {};
   }
 
@@ -150,8 +202,14 @@ export default async function setup(): Promise<() => Promise<void>> {
     if (child.pid) killProcessTree(child.pid);
     throw new Error('[e2e] el servidor local no respondió tras 45s');
   }
+  try {
+    await smokeCheck();
+  } catch (err) {
+    if (child.pid) killProcessTree(child.pid);
+    throw err;
+  }
   // eslint-disable-next-line no-console
-  console.log(`[e2e] servidor listo en ${BASE_URL} (pid ${child.pid})`);
+  console.log(`[e2e] servidor listo en ${BASE_URL} (pid ${child.pid}); smoke check OK`);
 
   return async () => {
     if (child.pid) {
