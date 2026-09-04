@@ -32,6 +32,7 @@ describe('AuthService', () => {
     email: 'runner@example.com',
     name: 'Ana Corredora',
     passwordHash: knownHash,
+    role: 'CLIENTE',
     createdAt: new Date(),
     updatedAt: new Date(),
   });
@@ -205,6 +206,7 @@ describe('AuthService', () => {
         id: 'user-1',
         email: 'runner@example.com',
         name: 'Ana Corredora',
+        role: 'CLIENTE',
       });
     });
 

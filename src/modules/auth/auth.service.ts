@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService, type JwtSignOptions } from '@nestjs/jwt';
+import { Role } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../../common/prisma/prisma.service.js';
 import type { RegisterDto } from './dto/register.dto.js';
@@ -33,10 +34,10 @@ export class AuthService {
 
     const passwordHash = await bcrypt.hash(dto.password, SALT_ROUNDS);
     const user = await this.prisma.user.create({
-      data: { email: dto.email, name: dto.name, passwordHash },
+      data: { email: dto.email, name: dto.name, passwordHash, role: Role.CLIENTE },
     });
 
-    return this.buildAuthResponse(user.id, user.email, user.name);
+    return this.buildAuthResponse(user.id, user.email, user.name, user.role);
   }
 
   async login(dto: LoginDto): Promise<AuthEntity> {
@@ -52,7 +53,7 @@ export class AuthService {
       throw new UnauthorizedException('Credenciales inválidas');
     }
 
-    return this.buildAuthResponse(user.id, user.email, user.name);
+    return this.buildAuthResponse(user.id, user.email, user.name, user.role);
   }
 
   async getMe(userId: string): Promise<UserEntity> {
@@ -60,7 +61,12 @@ export class AuthService {
     if (!user) {
       throw new NotFoundException('Usuario no encontrado');
     }
-    return new UserEntity({ id: user.id, email: user.email, name: user.name });
+    return new UserEntity({
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      role: user.role,
+    });
   }
 
   logout(): { success: true } {
@@ -97,13 +103,14 @@ export class AuthService {
       throw new UnauthorizedException('Refresh token inválido o expirado');
     }
 
-    return this.buildAuthResponse(user.id, user.email, user.name);
+    return this.buildAuthResponse(user.id, user.email, user.name, user.role);
   }
 
   private async buildAuthResponse(
     id: string,
     email: string,
     name: string,
+    role: Role,
   ): Promise<AuthEntity> {
     const payload: JwtPayload = { sub: id, email };
 
@@ -115,7 +122,7 @@ export class AuthService {
     const accessToken = await this.jwt.signAsync(payload);
     const refreshToken = await this.jwt.signAsync(payload, refreshOptions);
 
-    return new AuthEntity({ id, email, name, accessToken, refreshToken });
+    return new AuthEntity({ id, email, name, role, accessToken, refreshToken });
   }
 
   private refreshSecret(): string {

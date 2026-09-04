@@ -4,7 +4,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { Prisma, Role } from '@prisma/client';
 import type {
   Coach,
   CoachAthlete,
@@ -29,11 +29,18 @@ export class CoachService {
   constructor(private readonly prisma: PrismaService) {}
 
   async becomeCoach(userId: string, dto: BecomeCoachDto): Promise<CoachEntity> {
-    const coach = await this.prisma.coach.upsert({
-      where: { id: userId },
-      create: { id: userId, bio: dto.bio },
-      update: { bio: dto.bio },
-    });
+    // Atómico: registro de coach + promoción del rol a COACH.
+    const [coach] = await this.prisma.$transaction([
+      this.prisma.coach.upsert({
+        where: { id: userId },
+        create: { id: userId, bio: dto.bio },
+        update: { bio: dto.bio },
+      }),
+      this.prisma.user.update({
+        where: { id: userId },
+        data: { role: Role.COACH },
+      }),
+    ]);
     return this.toCoachEntity(coach);
   }
 

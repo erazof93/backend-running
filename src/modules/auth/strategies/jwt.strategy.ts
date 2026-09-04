@@ -2,6 +2,7 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
+import { Role } from '@prisma/client';
 import { PrismaService } from '../../../common/prisma/prisma.service.js';
 
 export interface JwtPayload {
@@ -13,6 +14,7 @@ export interface AuthenticatedUser {
   id: string;
   email: string;
   name: string;
+  role: Role;
 }
 
 @Injectable()
@@ -33,6 +35,6 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     if (!user) {
       throw new UnauthorizedException('Token inválido');
     }
-    return { id: user.id, email: user.email, name: user.name };
+    return { id: user.id, email: user.email, name: user.name, role: user.role };
   }
 }

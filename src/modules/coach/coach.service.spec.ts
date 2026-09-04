@@ -26,7 +26,11 @@ describe('CoachService', () => {
       findMany: ReturnType<typeof vi.fn>;
       findUnique: ReturnType<typeof vi.fn>;
     };
-    user: { findUnique: ReturnType<typeof vi.fn> };
+    user: {
+      findUnique: ReturnType<typeof vi.fn>;
+      update: ReturnType<typeof vi.fn>;
+    };
+    $transaction: ReturnType<typeof vi.fn>;
     activity: {
       count: ReturnType<typeof vi.fn>;
       aggregate: ReturnType<typeof vi.fn>;
@@ -98,7 +102,10 @@ describe('CoachService', () => {
         findMany: vi.fn(),
         findUnique: vi.fn(),
       },
-      user: { findUnique: vi.fn() },
+      user: {
+        findUnique: vi.fn(),
+        update: vi.fn().mockResolvedValue({ id: COACH, role: 'COACH' }),
+      },
       activity: {
         count: vi.fn().mockResolvedValue(0),
         aggregate: vi.fn().mockResolvedValue({
@@ -114,6 +121,7 @@ describe('CoachService', () => {
         findUnique: vi.fn(),
       },
       feedback: { create: vi.fn() },
+      $transaction: vi.fn((ops: Promise<unknown>[]) => Promise.all(ops)),
     };
 
     const moduleRef: TestingModule = await Test.createTestingModule({

@@ -10,6 +10,7 @@ import { CoachModule } from './modules/coach/coach.module.js';
 import { CommunityModule } from './modules/community/community.module.js';
 import { HealthModule } from './modules/health/health.module.js';
 import { SubscriptionsModule } from './modules/subscriptions/subscriptions.module.js';
+import { AdminModule } from './modules/admin/admin.module.js';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { SubscriptionsModule } from './modules/subscriptions/subscriptions.modul
     CoachModule,
     CommunityModule,
     SubscriptionsModule,
+    AdminModule,
   ],
   controllers: [AppController],
   providers: [AppService],

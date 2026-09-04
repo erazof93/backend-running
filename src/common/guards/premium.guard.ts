@@ -4,7 +4,7 @@ import {
   ForbiddenException,
   Injectable,
 } from '@nestjs/common';
-import { UserTier } from '@prisma/client';
+import { Role, UserTier } from '@prisma/client';
 import type { AuthenticatedUser } from '../../modules/auth/strategies/jwt.strategy.js';
 import { SubscriptionsService } from '../../modules/subscriptions/subscriptions.service.js';
 
@@ -24,6 +24,11 @@ export class PremiumGuard implements CanActivate {
 
     if (!user) {
       throw new ForbiddenException('User not authenticated');
+    }
+
+    // ADMIN / SUPERADMIN tienen acceso a todo, sin necesidad de suscripción.
+    if (user.role === Role.ADMIN || user.role === Role.SUPERADMIN) {
+      return true;
     }
 
     const subscription = await this.subscriptionsService.getByUserId(user.id);

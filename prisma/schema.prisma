@@ -16,6 +16,14 @@ enum UserTier {
   PRO_COACHING
 }
 
+/// Rol de acceso (permisos). Independiente de `tier`, que es monetización.
+enum Role {
+  SUPERADMIN // Crea/revoca ADMIN, acceso total
+  ADMIN // Moderación y analítica
+  CLIENTE // Atleta / usuario normal (default)
+  COACH // Vende coaching (se asigna al hacerse coach)
+}
+
 model User {
   id             String   @id @default(uuid())
   email          String   @unique
@@ -23,6 +31,7 @@ model User {
   name           String
   bio            String?
   profilePicture String?
+  role           Role     @default(CLIENTE)
   tier           UserTier @default(FREE)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
@@ -36,6 +45,8 @@ model User {
   comments     Comment[]
   subscription Subscription?
 
+  @@index([role])
+  @@index([tier])
   @@map("users")
 }
 

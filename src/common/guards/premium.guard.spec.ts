@@ -28,6 +28,16 @@ describe('PremiumGuard', () => {
     expect(getByUserId).toHaveBeenCalledWith('user-1');
   });
 
+  it('deja pasar a ADMIN / SUPERADMIN sin consultar la suscripción', async () => {
+    await expect(
+      guard.canActivate(ctxFor({ id: 'admin-1', role: 'ADMIN' })),
+    ).resolves.toBe(true);
+    await expect(
+      guard.canActivate(ctxFor({ id: 'root-1', role: 'SUPERADMIN' })),
+    ).resolves.toBe(true);
+    expect(getByUserId).not.toHaveBeenCalled();
+  });
+
   it('rechaza si no hay usuario autenticado', async () => {
     await expect(
       guard.canActivate(ctxFor(undefined)),
