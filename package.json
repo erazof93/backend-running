@@ -15,7 +15,9 @@
   "scripts": {
     "build": "nest build",
     "deploy": "nest deploy",
+    "db:migrate": "prisma migrate deploy",
     "db:seed": "prisma db seed",
+    "db:migrate:seed": "prisma migrate deploy && prisma db seed",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "npx prisma migrate deploy && nest start",
     "start:dev": "nest start --watch",
