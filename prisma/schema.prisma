@@ -10,6 +10,12 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum UserTier {
+  FREE
+  PREMIUM
+  PRO_COACHING
+}
+
 model User {
   id             String   @id @default(uuid())
   email          String   @unique
@@ -17,18 +23,76 @@ model User {
   name           String
   bio            String?
   profilePicture String?
+  tier           UserTier @default(FREE)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  followers   Follow[]        @relation("UserFollowers")
-  following   Follow[]        @relation("UserFollowing")
-  activities  Activity[]
-  coach       Coach?
-  coachLinks  CoachAthlete[]  @relation("AthleteLinks")
-  kudos       Kudo[]
-  comments    Comment[]
+  followers    Follow[]       @relation("UserFollowers")
+  following    Follow[]       @relation("UserFollowing")
+  activities   Activity[]
+  coach        Coach?
+  coachLinks   CoachAthlete[] @relation("AthleteLinks")
+  kudos        Kudo[]
+  comments     Comment[]
+  subscription Subscription?
 
   @@map("users")
+}
+
+model Subscription {
+  id     String   @id @default(uuid())
+  userId String   @unique
+  user   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  tier   UserTier @default(FREE)
+  status String   @default("ACTIVE")
+
+  googlePlayToken          String? @unique
+  googlePlayPackageId      String?
+  googlePlaySubscriptionId String?
+
+  stripeSubscriptionId String? @unique
+  stripeCustomerId     String?
+
+  startsAt   DateTime  @default(now())
+  expiresAt  DateTime?
+  renewsAt   DateTime?
+  canceledAt DateTime?
+
+  platform      String  @default("stripe")
+  paymentMethod String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  transactions Transaction[]
+
+  @@index([userId])
+  @@index([status])
+  @@map("subscriptions")
+}
+
+model Transaction {
+  id             String       @id @default(uuid())
+  subscriptionId String
+  subscription   Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+
+  amount   Float
+  currency String @default("USD")
+  status   String @default("SUCCESS")
+
+  googlePlayOrderId String?
+  stripeInvoiceId   String?
+
+  description        String
+  billingPeriodStart DateTime
+  billingPeriodEnd   DateTime
+
+  createdAt DateTime @default(now())
+
+  @@index([subscriptionId])
+  @@index([status])
+  @@map("transactions")
 }
 
 enum ActivityType {

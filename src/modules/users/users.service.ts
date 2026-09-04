@@ -4,7 +4,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import type { User } from '@prisma/client';
+import type { Prisma, User } from '@prisma/client';
 import { PrismaService } from '../../common/prisma/prisma.service.js';
 import type { UpdateUserDto } from './dto/update-user.dto.js';
 import { UserProfileEntity } from './entities/user.entity.js';
@@ -41,6 +41,14 @@ export class UsersService {
     });
 
     return this.toProfileEntity(updated);
+  }
+
+  /**
+   * Actualización parcial de bajo nivel (p. ej. sincronizar `tier` desde el
+   * módulo de suscripciones). No aplica reglas de negocio de perfil.
+   */
+  async update(id: string, data: Prisma.UserUpdateInput): Promise<User> {
+    return this.prisma.user.update({ where: { id }, data });
   }
 
   async getUserActivities(id: string): Promise<unknown[]> {

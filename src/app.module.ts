@@ -9,6 +9,7 @@ import { ActivitiesModule } from './modules/activities/activities.module.js';
 import { CoachModule } from './modules/coach/coach.module.js';
 import { CommunityModule } from './modules/community/community.module.js';
 import { HealthModule } from './modules/health/health.module.js';
+import { SubscriptionsModule } from './modules/subscriptions/subscriptions.module.js';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { HealthModule } from './modules/health/health.module.js';
     ActivitiesModule,
     CoachModule,
     CommunityModule,
+    SubscriptionsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

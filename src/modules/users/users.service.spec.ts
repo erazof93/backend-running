@@ -158,6 +158,21 @@ describe('UsersService', () => {
     });
   });
 
+  describe('update', () => {
+    it('escribe los datos crudos con prisma.user.update y devuelve la fila', async () => {
+      const updated = userRow({ tier: 'PREMIUM' });
+      prisma.user.update.mockResolvedValue(updated);
+
+      const result = await service.update('user-1', { tier: 'PREMIUM' });
+
+      expect(prisma.user.update).toHaveBeenCalledWith({
+        where: { id: 'user-1' },
+        data: { tier: 'PREMIUM' },
+      });
+      expect(result).toBe(updated);
+    });
+  });
+
   describe('getUserActivities', () => {
     it('devuelve una lista vacía para un usuario existente', async () => {
       prisma.user.findUnique.mockResolvedValue(userRow());
