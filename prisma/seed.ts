@@ -445,6 +445,51 @@ async function seedModeration(idByEmail: Map<string, string>): Promise<void> {
   console.log(`✔ moderation  ${comments} comentarios, ${reports} reportes, 3 logs`);
 }
 
+/** Solicitudes de coach pendientes para el panel de admin. */
+async function seedCoachApplications(
+  idByEmail: Map<string, string>,
+): Promise<void> {
+  await prisma.coachApplication.deleteMany({});
+
+  const apps: {
+    email: string;
+    phone: string;
+    experience: string;
+    bio: string;
+  }[] = [
+    {
+      email: 'athlete@velora.com',
+      phone: '+34 600 111 222',
+      experience:
+        '6 años corriendo en club, 2 como monitor de iniciación. Nivel I de la federación.',
+      bio: 'Iniciación y 10K. Paciente y muy metódico con los planes.',
+    },
+    {
+      email: 'athlete2@velora.com',
+      phone: '+34 611 333 444',
+      experience:
+        'Preparadora física titulada, 4 años dando planes de fuerza para runners.',
+      bio: 'Fuerza y prevención de lesiones para corredores de fondo.',
+    },
+  ];
+
+  let n = 0;
+  for (const a of apps) {
+    const userId = idByEmail.get(a.email);
+    if (!userId) continue;
+    await prisma.coachApplication.create({
+      data: {
+        userId,
+        phone: a.phone,
+        experience: a.experience,
+        bio: a.bio,
+      },
+    });
+    n += 1;
+  }
+  console.log(`✔ coach apps  ${n} solicitudes pendientes`);
+}
+
 async function main(): Promise<void> {
   const idByEmail = await seedUsers();
   await seedRosters(idByEmail);
@@ -452,6 +497,7 @@ async function main(): Promise<void> {
   await seedPlans(idByEmail);
   await seedSubscriptions(idByEmail);
   await seedModeration(idByEmail);
+  await seedCoachApplications(idByEmail);
 }
 
 main()

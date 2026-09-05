@@ -45,16 +45,18 @@ model User {
   createdAt      DateTime   @default(now())
   updatedAt      DateTime   @updatedAt
 
-  followers      Follow[]        @relation("UserFollowers")
-  following      Follow[]        @relation("UserFollowing")
-  activities     Activity[]
-  coach          Coach?
-  coachLinks     CoachAthlete[]  @relation("AthleteLinks")
-  kudos          Kudo[]
-  comments       Comment[]
-  subscription   Subscription?
-  reportsMade    Report[]        @relation("ReportReporter")
-  moderationLogs ModerationLog[]
+  followers            Follow[]           @relation("UserFollowers")
+  following            Follow[]           @relation("UserFollowing")
+  activities           Activity[]
+  coach                Coach?
+  coachLinks           CoachAthlete[]     @relation("AthleteLinks")
+  kudos                Kudo[]
+  comments             Comment[]
+  subscription         Subscription?
+  reportsMade          Report[]           @relation("ReportReporter")
+  moderationLogs       ModerationLog[]
+  coachApplication     CoachApplication?  @relation("ApplicationApplicant")
+  reviewedApplications CoachApplication[] @relation("ApplicationReviewer")
 
   @@index([role])
   @@index([tier])
@@ -215,6 +217,33 @@ model Report {
   @@index([commentId])
   @@index([status])
   @@map("reports")
+}
+
+enum CoachApplicationStatus {
+  pending
+  approved
+  rejected
+}
+
+/// Solicitud de un usuario para convertirse en COACH. Un ADMIN la aprueba
+/// (crea el perfil Coach + promueve el rol) o la rechaza. Una fila por usuario:
+/// re-solicitar tras un rechazo reutiliza la misma fila.
+model CoachApplication {
+  id           String                 @id @default(uuid())
+  userId       String                 @unique
+  user         User                   @relation("ApplicationApplicant", fields: [userId], references: [id], onDelete: Cascade)
+  phone        String
+  experience   String
+  bio          String?
+  status       CoachApplicationStatus @default(pending)
+  reviewNote   String?
+  reviewedById String?
+  reviewedBy   User?                  @relation("ApplicationReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+  createdAt    DateTime               @default(now())
+  reviewedAt   DateTime?
+
+  @@index([status])
+  @@map("coach_applications")
 }
 
 /// Bitácora de acciones de moderación (para la pestaña "Historial").
