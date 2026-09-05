@@ -33,6 +33,7 @@ describe('AuthService', () => {
     name: 'Ana Corredora',
     passwordHash: knownHash,
     role: 'CLIENTE',
+    tier: 'FREE',
     createdAt: new Date(),
     updatedAt: new Date(),
   });
@@ -160,6 +161,7 @@ describe('AuthService', () => {
 
       expect(result).toBeInstanceOf(AuthEntity);
       expect(result.id).toBe('user-1');
+      expect(result.tier).toBe('FREE');
       expect(result.accessToken).toBe('access-token-value');
       expect(result.refreshToken).toBe('refresh-token-value');
     });
@@ -207,6 +209,7 @@ describe('AuthService', () => {
         email: 'runner@example.com',
         name: 'Ana Corredora',
         role: 'CLIENTE',
+        tier: 'FREE',
       });
     });
 

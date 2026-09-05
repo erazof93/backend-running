@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Role } from '@prisma/client';
+import { Role, UserTier } from '@prisma/client';
 
 export class UserEntity {
   @ApiProperty({ example: 'b3f1c2a4-...' })
@@ -13,6 +13,9 @@ export class UserEntity {
 
   @ApiProperty({ enum: Role, example: Role.CLIENTE })
   role!: Role;
+
+  @ApiProperty({ enum: UserTier, example: UserTier.FREE })
+  tier!: UserTier;
 
   constructor(partial: Partial<UserEntity>) {
     Object.assign(this, partial);
@@ -31,6 +34,9 @@ export class AuthEntity {
 
   @ApiProperty({ enum: Role, example: Role.CLIENTE })
   role!: Role;
+
+  @ApiProperty({ enum: UserTier, example: UserTier.FREE })
+  tier!: UserTier;
 
   @ApiProperty({ description: 'JWT de acceso (Bearer)' })
   accessToken!: string;

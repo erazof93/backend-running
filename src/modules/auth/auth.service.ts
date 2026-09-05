@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService, type JwtSignOptions } from '@nestjs/jwt';
-import { Role } from '@prisma/client';
+import { Role, UserTier } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../../common/prisma/prisma.service.js';
 import type { RegisterDto } from './dto/register.dto.js';
@@ -37,7 +37,7 @@ export class AuthService {
       data: { email: dto.email, name: dto.name, passwordHash, role: Role.CLIENTE },
     });
 
-    return this.buildAuthResponse(user.id, user.email, user.name, user.role);
+    return this.buildAuthResponse(user.id, user.email, user.name, user.role, user.tier);
   }
 
   async login(dto: LoginDto): Promise<AuthEntity> {
@@ -53,7 +53,7 @@ export class AuthService {
       throw new UnauthorizedException('Credenciales inválidas');
     }
 
-    return this.buildAuthResponse(user.id, user.email, user.name, user.role);
+    return this.buildAuthResponse(user.id, user.email, user.name, user.role, user.tier);
   }
 
   async getMe(userId: string): Promise<UserEntity> {
@@ -66,6 +66,7 @@ export class AuthService {
       email: user.email,
       name: user.name,
       role: user.role,
+      tier: user.tier,
     });
   }
 
@@ -103,7 +104,7 @@ export class AuthService {
       throw new UnauthorizedException('Refresh token inválido o expirado');
     }
 
-    return this.buildAuthResponse(user.id, user.email, user.name, user.role);
+    return this.buildAuthResponse(user.id, user.email, user.name, user.role, user.tier);
   }
 
   private async buildAuthResponse(
@@ -111,6 +112,7 @@ export class AuthService {
     email: string,
     name: string,
     role: Role,
+    tier: UserTier,
   ): Promise<AuthEntity> {
     const payload: JwtPayload = { sub: id, email };
 
@@ -122,7 +124,7 @@ export class AuthService {
     const accessToken = await this.jwt.signAsync(payload);
     const refreshToken = await this.jwt.signAsync(payload, refreshOptions);
 
-    return new AuthEntity({ id, email, name, role, accessToken, refreshToken });
+    return new AuthEntity({ id, email, name, role, tier, accessToken, refreshToken });
   }
 
   private refreshSecret(): string {
