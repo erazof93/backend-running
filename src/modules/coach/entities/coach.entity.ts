@@ -45,6 +45,75 @@ export class CoachAthleteEntity {
   }
 }
 
+export class CoachSummaryEntity {
+  @ApiProperty({ example: 'f0e1d2c3-...' })
+  id!: string;
+
+  @ApiProperty({ example: 'Juan Entrenador' })
+  name!: string;
+
+  @ApiProperty({ example: 'juan@example.com' })
+  email!: string;
+
+  @ApiProperty({ example: 'Entrenador nivel II', nullable: true })
+  bio!: string | null;
+
+  @ApiProperty({ example: null, nullable: true })
+  profilePicture!: string | null;
+
+  @ApiProperty({ example: 8, description: 'Cantidad de atletas en su roster' })
+  athleteCount!: number;
+
+  @ApiProperty({ example: 3, description: 'Cantidad de planes creados' })
+  planCount!: number;
+
+  @ApiProperty()
+  createdAt!: Date;
+
+  constructor(partial: Partial<CoachSummaryEntity>) {
+    Object.assign(this, partial);
+  }
+}
+
+export class CoachEarningTransactionEntity {
+  @ApiProperty({ example: 't1r2a3n4-...' })
+  id!: string;
+
+  @ApiProperty({ example: 'a1t2h3l4-...' })
+  athleteId!: string;
+
+  @ApiProperty({ example: 'Ana Corredora' })
+  athleteName!: string;
+
+  @ApiProperty({ example: 9.99 })
+  amount!: number;
+
+  @ApiProperty({ example: 'USD' })
+  currency!: string;
+
+  @ApiProperty({ example: 'Stripe subscription created - PREMIUM' })
+  description!: string;
+
+  @ApiProperty()
+  createdAt!: Date;
+
+  constructor(partial: Partial<CoachEarningTransactionEntity>) {
+    Object.assign(this, partial);
+  }
+}
+
+export class CoachEarningsEntity {
+  @ApiProperty({ example: 249.75 })
+  totalEarnings!: number;
+
+  @ApiProperty({ type: [CoachEarningTransactionEntity] })
+  transactions!: CoachEarningTransactionEntity[];
+
+  constructor(partial: Partial<CoachEarningsEntity>) {
+    Object.assign(this, partial);
+  }
+}
+
 export class AthleteProfileEntity {
   @ApiProperty({ example: 'a1t2h3l4-...' })
   id!: string;

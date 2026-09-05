@@ -29,7 +29,9 @@ import { AssignAthleteDto } from './dto/assign-athlete.dto.js';
 import {
   AthleteProfileEntity,
   CoachAthleteEntity,
+  CoachEarningsEntity,
   CoachEntity,
+  CoachSummaryEntity,
 } from './entities/coach.entity.js';
 import { FeedbackEntity, PlanEntity } from './entities/plan.entity.js';
 
@@ -49,6 +51,25 @@ export class CoachController {
     @CurrentUser() user: AuthenticatedUser,
   ): Promise<CoachEntity> {
     return this.coachService.becomeCoach(user.id, dto);
+  }
+
+  @Get('marketplace')
+  @ApiOperation({ summary: 'Listado público de coaches (marketplace)' })
+  @ApiResponse({ status: 200, type: [CoachSummaryEntity] })
+  getMarketplace(): Promise<CoachSummaryEntity[]> {
+    return this.coachService.getMarketplace();
+  }
+
+  @Get('earnings')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Ganancias generadas por mis atletas asignados' })
+  @ApiResponse({ status: 200, type: CoachEarningsEntity })
+  @ApiResponse({ status: 403, description: 'No estás registrado como coach' })
+  getEarnings(
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<CoachEarningsEntity> {
+    return this.coachService.getEarnings(user.id);
   }
 
   @Get('athletes')
@@ -118,6 +139,16 @@ export class CoachController {
     @CurrentUser() user: AuthenticatedUser,
   ): Promise<PlanEntity> {
     return this.coachService.createPlan(user.id, dto);
+  }
+
+  @Get('plans')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Listar mis planes de entrenamiento' })
+  @ApiResponse({ status: 200, type: [PlanEntity] })
+  @ApiResponse({ status: 403, description: 'No estás registrado como coach' })
+  getMyPlans(@CurrentUser() user: AuthenticatedUser): Promise<PlanEntity[]> {
+    return this.coachService.getMyPlans(user.id);
   }
 
   @Get('plans/:id')

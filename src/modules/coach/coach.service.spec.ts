@@ -9,7 +9,9 @@ import { PrismaService } from '../../common/prisma/prisma.service.js';
 import {
   AthleteProfileEntity,
   CoachAthleteEntity,
+  CoachEarningsEntity,
   CoachEntity,
+  CoachSummaryEntity,
 } from './entities/coach.entity.js';
 import { FeedbackEntity, PlanEntity } from './entities/plan.entity.js';
 
@@ -19,6 +21,7 @@ describe('CoachService', () => {
     coach: {
       upsert: ReturnType<typeof vi.fn>;
       findUnique: ReturnType<typeof vi.fn>;
+      findMany: ReturnType<typeof vi.fn>;
     };
     coachAthlete: {
       upsert: ReturnType<typeof vi.fn>;
@@ -42,8 +45,10 @@ describe('CoachService', () => {
       update: ReturnType<typeof vi.fn>;
       delete: ReturnType<typeof vi.fn>;
       findUnique: ReturnType<typeof vi.fn>;
+      findMany: ReturnType<typeof vi.fn>;
     };
     feedback: { create: ReturnType<typeof vi.fn> };
+    transaction: { findMany: ReturnType<typeof vi.fn> };
   };
 
   const COACH = 'coach-1';
@@ -95,6 +100,7 @@ describe('CoachService', () => {
       coach: {
         upsert: vi.fn().mockResolvedValue(coachRow()),
         findUnique: vi.fn().mockResolvedValue(coachRow()),
+        findMany: vi.fn(),
       },
       coachAthlete: {
         upsert: vi.fn(),
@@ -119,8 +125,10 @@ describe('CoachService', () => {
         update: vi.fn(),
         delete: vi.fn().mockResolvedValue({}),
         findUnique: vi.fn(),
+        findMany: vi.fn(),
       },
       feedback: { create: vi.fn() },
+      transaction: { findMany: vi.fn() },
       $transaction: vi.fn((ops: Promise<unknown>[]) => Promise.all(ops)),
     };
 
@@ -142,6 +150,31 @@ describe('CoachService', () => {
       });
       expect(result).toBeInstanceOf(CoachEntity);
       expect(result.id).toBe(COACH);
+    });
+  });
+
+  describe('getMarketplace', () => {
+    it('devuelve el listado público de coaches con conteos', async () => {
+      prisma.coach.findMany.mockResolvedValue([
+        {
+          ...coachRow(),
+          user: { name: 'Juan Coach', email: 'juan@example.com', profilePicture: null },
+          _count: { athletes: 5, plans: 2 },
+        },
+      ]);
+
+      const result = await service.getMarketplace();
+
+      expect(prisma.coach.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          include: { user: true, _count: { select: { athletes: true, plans: true } } },
+        }),
+      );
+      expect(result).toHaveLength(1);
+      expect(result[0]).toBeInstanceOf(CoachSummaryEntity);
+      expect(result[0].name).toBe('Juan Coach');
+      expect(result[0].athleteCount).toBe(5);
+      expect(result[0].planCount).toBe(2);
     });
   });
 
@@ -276,6 +309,29 @@ describe('CoachService', () => {
       await expect(
         service.getAthleteProfile(COACH, ATHLETE),
       ).rejects.toBeInstanceOf(NotFoundException);
+    });
+  });
+
+  describe('getMyPlans', () => {
+    it('devuelve los planes del coach ordenados por weekStart desc', async () => {
+      prisma.trainingPlan.findMany.mockResolvedValue([planRow()]);
+
+      const result = await service.getMyPlans(COACH);
+
+      expect(prisma.trainingPlan.findMany).toHaveBeenCalledWith({
+        where: { coachId: COACH },
+        orderBy: { weekStart: 'desc' },
+      });
+      expect(result).toHaveLength(1);
+      expect(result[0]).toBeInstanceOf(PlanEntity);
+    });
+
+    it('lanza ForbiddenException si no es coach', async () => {
+      prisma.coach.findUnique.mockResolvedValue(null);
+
+      await expect(service.getMyPlans(COACH)).rejects.toBeInstanceOf(
+        ForbiddenException,
+      );
     });
   });
 
@@ -446,6 +502,55 @@ describe('CoachService', () => {
         service.giveFeedback(COACH, ATHLETE, feedbackDto),
       ).rejects.toBeInstanceOf(BadRequestException);
       expect(prisma.feedback.create).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('getEarnings', () => {
+    it('suma las transacciones exitosas de los atletas asignados', async () => {
+      prisma.coachAthlete.findMany.mockResolvedValue([{ athleteId: ATHLETE }]);
+      prisma.transaction.findMany.mockResolvedValue([
+        {
+          id: 'tx-1',
+          amount: 9.99,
+          currency: 'USD',
+          description: 'Stripe subscription created - PREMIUM',
+          createdAt: new Date('2026-02-01'),
+          subscription: { userId: ATHLETE, user: athleteUser() },
+        },
+      ]);
+
+      const result = await service.getEarnings(COACH);
+
+      expect(prisma.transaction.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: {
+            status: 'SUCCESS',
+            subscription: { userId: { in: [ATHLETE] } },
+          },
+        }),
+      );
+      expect(result).toBeInstanceOf(CoachEarningsEntity);
+      expect(result.totalEarnings).toBe(9.99);
+      expect(result.transactions).toHaveLength(1);
+      expect(result.transactions[0].athleteName).toBe('Ana Corredora');
+    });
+
+    it('devuelve 0 y sin transacciones si el coach no tiene atletas', async () => {
+      prisma.coachAthlete.findMany.mockResolvedValue([]);
+
+      const result = await service.getEarnings(COACH);
+
+      expect(result.totalEarnings).toBe(0);
+      expect(result.transactions).toEqual([]);
+      expect(prisma.transaction.findMany).not.toHaveBeenCalled();
+    });
+
+    it('lanza ForbiddenException si no es coach', async () => {
+      prisma.coach.findUnique.mockResolvedValue(null);
+
+      await expect(service.getEarnings(COACH)).rejects.toBeInstanceOf(
+        ForbiddenException,
+      );
     });
   });
 });

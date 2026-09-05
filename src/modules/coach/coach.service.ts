@@ -20,7 +20,10 @@ import type { CreateFeedbackDto } from './dto/create-feedback.dto.js';
 import {
   AthleteProfileEntity,
   CoachAthleteEntity,
+  CoachEarningsEntity,
+  CoachEarningTransactionEntity,
   CoachEntity,
+  CoachSummaryEntity,
 } from './entities/coach.entity.js';
 import { FeedbackEntity, PlanEntity } from './entities/plan.entity.js';
 
@@ -78,6 +81,26 @@ export class CoachService {
     return { success: true };
   }
 
+  async getMarketplace(): Promise<CoachSummaryEntity[]> {
+    const coaches = await this.prisma.coach.findMany({
+      include: { user: true, _count: { select: { athletes: true, plans: true } } },
+      orderBy: { createdAt: 'desc' },
+    });
+    return coaches.map(
+      (c) =>
+        new CoachSummaryEntity({
+          id: c.id,
+          name: c.user.name,
+          email: c.user.email,
+          bio: c.bio,
+          profilePicture: c.user.profilePicture,
+          athleteCount: c._count.athletes,
+          planCount: c._count.plans,
+          createdAt: c.createdAt,
+        }),
+    );
+  }
+
   async getMyAthletes(coachId: string): Promise<CoachAthleteEntity[]> {
     await this.assertCoach(coachId);
     const links = await this.prisma.coachAthlete.findMany({
@@ -127,6 +150,15 @@ export class CoachService {
       totalDuration: totals._sum.duration ?? 0,
       status: link.status,
     });
+  }
+
+  async getMyPlans(coachId: string): Promise<PlanEntity[]> {
+    await this.assertCoach(coachId);
+    const plans = await this.prisma.trainingPlan.findMany({
+      where: { coachId },
+      orderBy: { weekStart: 'desc' },
+    });
+    return plans.map((p) => this.toPlanEntity(p));
   }
 
   async createPlan(coachId: string, dto: CreatePlanDto): Promise<PlanEntity> {
@@ -215,6 +247,48 @@ export class CoachService {
       },
     });
     return this.toFeedbackEntity(feedback);
+  }
+
+  async getEarnings(coachId: string): Promise<CoachEarningsEntity> {
+    await this.assertCoach(coachId);
+
+    const links = await this.prisma.coachAthlete.findMany({
+      where: { coachId },
+      select: { athleteId: true },
+    });
+    const athleteIds = links.map((l) => l.athleteId);
+    if (athleteIds.length === 0) {
+      return new CoachEarningsEntity({ totalEarnings: 0, transactions: [] });
+    }
+
+    // Atribuye al coach los pagos de suscripción de sus atletas asignados:
+    // no existe todavía un modelo de "payout" propio, así que el ingreso
+    // generado se calcula sobre las transacciones reales de esos atletas.
+    const transactions = await this.prisma.transaction.findMany({
+      where: {
+        status: 'SUCCESS',
+        subscription: { userId: { in: athleteIds } },
+      },
+      include: { subscription: { include: { user: true } } },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const totalEarnings = transactions.reduce((sum, t) => sum + t.amount, 0);
+    return new CoachEarningsEntity({
+      totalEarnings,
+      transactions: transactions.map(
+        (t) =>
+          new CoachEarningTransactionEntity({
+            id: t.id,
+            athleteId: t.subscription.userId,
+            athleteName: t.subscription.user.name,
+            amount: t.amount,
+            currency: t.currency,
+            description: t.description,
+            createdAt: t.createdAt,
+          }),
+      ),
+    });
   }
 
   private async assertCoach(coachId: string): Promise<Coach> {
