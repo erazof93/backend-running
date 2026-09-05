@@ -7,8 +7,8 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   app.enableCors({ origin: process.env.CORS_ORIGIN?.split(',') ?? true });
-  // /health queda fuera del prefijo (lo consumen Railway y docker-compose).
-  app.setGlobalPrefix('api/v1', { exclude: ['health'] });
+  // Todo bajo /api/v1, incluido /api/v1/health (healthcheck de Railway y panel admin).
+  app.setGlobalPrefix('api/v1');
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,

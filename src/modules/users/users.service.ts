@@ -4,10 +4,16 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import type { Prisma, User } from '@prisma/client';
+import { Role, UserStatus, type Prisma, type User } from '@prisma/client';
 import { PrismaService } from '../../common/prisma/prisma.service.js';
-import type { UpdateUserDto } from './dto/update-user.dto.js';
 import { UserProfileEntity } from './entities/user.entity.js';
+
+type ProfilePatch = {
+  name?: string;
+  email?: string;
+  bio?: string;
+  profilePicture?: string;
+};
 
 @Injectable()
 export class UsersService {
@@ -18,7 +24,7 @@ export class UsersService {
     return this.toProfileEntity(user);
   }
 
-  async updateUser(id: string, dto: UpdateUserDto): Promise<UserProfileEntity> {
+  async updateUser(id: string, dto: ProfilePatch): Promise<UserProfileEntity> {
     const user = await this.findUserOr404(id);
 
     if (dto.email && dto.email !== user.email) {
@@ -116,10 +122,22 @@ export class UsersService {
   }
 
   private async toProfileEntity(user: User): Promise<UserProfileEntity> {
-    const [followerCount, followingCount] = await Promise.all([
+    const [followerCount, followingCount, activities] = await Promise.all([
       this.prisma.follow.count({ where: { followingId: user.id } }),
       this.prisma.follow.count({ where: { followerId: user.id } }),
+      this.prisma.activity.count({ where: { userId: user.id } }),
     ]);
+
+    const role =
+      user.role === Role.CLIENTE
+        ? 'athlete'
+        : user.role === Role.COACH
+          ? 'coach'
+          : 'admin';
+    const status =
+      user.status === UserStatus.SUSPENDED || user.status === UserStatus.BANNED
+        ? 'SUSPENDED'
+        : 'ACTIVE';
 
     return new UserProfileEntity({
       id: user.id,
@@ -131,6 +149,11 @@ export class UsersService {
       updatedAt: user.updatedAt,
       followerCount,
       followingCount,
+      role,
+      tier: user.tier,
+      status,
+      followers: followerCount,
+      activities,
     });
   }
 }

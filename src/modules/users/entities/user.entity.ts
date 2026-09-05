@@ -33,6 +33,22 @@ export class UserProfileEntity {
   @ApiProperty({ example: 8, description: 'Cantidad de usuarios que sigue' })
   followingCount!: number;
 
+  // ── Campos que consume el panel admin (superset de `AdminUser`) ──
+  @ApiProperty({ example: 'athlete', enum: ['athlete', 'coach', 'admin'] })
+  role!: 'athlete' | 'coach' | 'admin';
+
+  @ApiProperty({ example: 'FREE', enum: ['FREE', 'PREMIUM', 'PRO_COACHING'] })
+  tier!: string;
+
+  @ApiProperty({ example: 'ACTIVE', enum: ['ACTIVE', 'SUSPENDED'] })
+  status!: 'ACTIVE' | 'SUSPENDED';
+
+  @ApiProperty({ example: 12, description: 'Alias de followerCount' })
+  followers!: number;
+
+  @ApiProperty({ example: 5, description: 'Cantidad de actividades registradas' })
+  activities!: number;
+
   constructor(partial: Partial<UserProfileEntity>) {
     Object.assign(this, partial);
   }

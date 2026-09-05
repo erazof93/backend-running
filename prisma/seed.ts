@@ -1,8 +1,11 @@
 import {
   ActivityType,
+  ModerationResolution,
   Prisma,
   PrismaClient,
+  ReportSeverity,
   Role,
+  UserStatus,
   UserTier,
 } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
@@ -323,12 +326,132 @@ async function seedSubscriptions(idByEmail: Map<string, string>): Promise<void> 
   }
 }
 
+/**
+ * Datos para el panel de moderación de `admin-velora`: comentarios con reportes
+ * pendientes, usuarios reportados y un historial de acciones.
+ */
+async function seedModeration(idByEmail: Map<string, string>): Promise<void> {
+  const adminId = idByEmail.get('admin@velora.com');
+  if (!adminId) return;
+
+  // Idempotencia: los comentarios/reportes cuelgan de actividades que
+  // `seedActivities` recrea (cascade). El historial se limpia aquí.
+  await prisma.moderationLog.deleteMany({});
+
+  // Un par de cuentas con aviso previo, para la lista de "usuarios reportados".
+  const warnedId = idByEmail.get('athlete3@velora.com');
+  if (warnedId) {
+    await prisma.user.update({
+      where: { id: warnedId },
+      data: { status: UserStatus.WARNED },
+    });
+  }
+
+  const commentPlan: {
+    activityOwner: string;
+    authorEmail: string;
+    text: string;
+    reports: { byEmail: string; reason: string; severity: ReportSeverity }[];
+  }[] = [
+    {
+      activityOwner: 'athlete@velora.com',
+      authorEmail: 'athlete3@velora.com',
+      text: 'Este plan es una estafa, el coach no responde y encima cobra de más.',
+      reports: [
+        { byEmail: 'athlete2@velora.com', reason: 'Difamación / lenguaje ofensivo', severity: ReportSeverity.MEDIUM },
+        { byEmail: 'coach@velora.com', reason: 'Acusación falsa', severity: ReportSeverity.MEDIUM },
+      ],
+    },
+    {
+      activityOwner: 'athlete2@velora.com',
+      authorEmail: 'athlete3@velora.com',
+      text: 'jajaja así no vas a correr una maratón en tu vida, deja de intentarlo',
+      reports: [
+        { byEmail: 'athlete2@velora.com', reason: 'Acoso a otro usuario', severity: ReportSeverity.HIGH },
+        { byEmail: 'athlete@velora.com', reason: 'Acoso', severity: ReportSeverity.HIGH },
+        { byEmail: 'coach2@velora.com', reason: 'Insultos', severity: ReportSeverity.MEDIUM },
+      ],
+    },
+    {
+      activityOwner: 'athlete@velora.com',
+      authorEmail: 'athlete2@velora.com',
+      text: 'Vendo suplementos baratos, escribidme por privado si quieres el link',
+      reports: [
+        { byEmail: 'athlete@velora.com', reason: 'Spam / promoción no autorizada', severity: ReportSeverity.LOW },
+      ],
+    },
+  ];
+
+  let comments = 0;
+  let reports = 0;
+  for (const c of commentPlan) {
+    const authorId = idByEmail.get(c.authorEmail);
+    const ownerId = idByEmail.get(c.activityOwner);
+    if (!authorId || !ownerId) continue;
+
+    const activity = await prisma.activity.findFirst({
+      where: { userId: ownerId },
+      orderBy: { createdAt: 'asc' },
+    });
+    if (!activity) continue;
+
+    const comment = await prisma.comment.create({
+      data: { activityId: activity.id, userId: authorId, text: c.text },
+    });
+    comments += 1;
+
+    for (const r of c.reports) {
+      const reporterId = idByEmail.get(r.byEmail);
+      if (!reporterId) continue;
+      await prisma.report.create({
+        data: {
+          commentId: comment.id,
+          reporterId,
+          reason: r.reason,
+          severity: r.severity,
+        },
+      });
+      reports += 1;
+    }
+  }
+
+  // Historial de acciones ya tomadas.
+  await prisma.moderationLog.createMany({
+    data: [
+      {
+        action: ModerationResolution.approve,
+        adminId,
+        targetLabel: 'Comentario #a1b2c3d4',
+        reason: 'Sin infracción real',
+        createdAt: new Date(Date.now() - 45 * 60_000),
+      },
+      {
+        action: ModerationResolution.delete,
+        adminId,
+        targetLabel: 'Comentario #e5f6a7b8',
+        reason: 'Spam con enlaces',
+        createdAt: new Date(Date.now() - 3 * 3_600_000),
+      },
+      {
+        action: ModerationResolution.ban,
+        adminId,
+        targetLabel: 'Kevin Lara',
+        reason: 'Acoso reiterado',
+        createdAt: new Date(Date.now() - 26 * 3_600_000),
+      },
+    ],
+  });
+
+  console.log(`✔ moderation  ${comments} comentarios, ${reports} reportes, 3 logs`);
+}
+
 async function main(): Promise<void> {
   const idByEmail = await seedUsers();
   await seedRosters(idByEmail);
   await seedActivities(idByEmail);
   await seedPlans(idByEmail);
   await seedSubscriptions(idByEmail);
+  await seedModeration(idByEmail);
 }
 
 main()

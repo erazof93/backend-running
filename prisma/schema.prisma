@@ -24,36 +24,49 @@ enum Role {
   COACH // Vende coaching (se asigna al hacerse coach)
 }
 
+/// Estado de la cuenta (moderación). `WARNED` = aviso; `BANNED`/`SUSPENDED` = bloqueado.
+enum UserStatus {
+  ACTIVE
+  WARNED
+  SUSPENDED
+  BANNED
+}
+
 model User {
-  id             String   @id @default(uuid())
-  email          String   @unique
+  id             String     @id @default(uuid())
+  email          String     @unique
   passwordHash   String
   name           String
   bio            String?
   profilePicture String?
-  role           Role     @default(CLIENTE)
-  tier           UserTier @default(FREE)
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  role           Role       @default(CLIENTE)
+  tier           UserTier   @default(FREE)
+  status         UserStatus @default(ACTIVE)
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
 
-  followers    Follow[]       @relation("UserFollowers")
-  following    Follow[]       @relation("UserFollowing")
-  activities   Activity[]
-  coach        Coach?
-  coachLinks   CoachAthlete[] @relation("AthleteLinks")
-  kudos        Kudo[]
-  comments     Comment[]
-  subscription Subscription?
+  followers      Follow[]        @relation("UserFollowers")
+  following      Follow[]        @relation("UserFollowing")
+  activities     Activity[]
+  coach          Coach?
+  coachLinks     CoachAthlete[]  @relation("AthleteLinks")
+  kudos          Kudo[]
+  comments       Comment[]
+  subscription   Subscription?
+  reportsMade    Report[]        @relation("ReportReporter")
+  moderationLogs ModerationLog[]
 
   @@index([role])
   @@index([tier])
+  @@index([status])
+  @@index([createdAt])
   @@map("users")
 }
 
 model Subscription {
-  id     String   @id @default(uuid())
-  userId String   @unique
-  user   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id     String @id @default(uuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   tier   UserTier @default(FREE)
   status String   @default("ACTIVE")
@@ -158,10 +171,64 @@ model Comment {
 
   user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   activity Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  reports  Report[]
 
   @@index([activityId])
   @@index([userId])
   @@map("comments")
+}
+
+enum ReportSeverity {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum ReportStatus {
+  pending
+  resolved
+}
+
+/// Resultado que un ADMIN aplica a un reporte / comentario.
+enum ModerationResolution {
+  approve
+  reject
+  delete
+  ban
+}
+
+/// Un usuario reporta un comentario. Varios reportes sobre el mismo comentario
+/// se agregan en la vista de moderación (`flagsCount`).
+model Report {
+  id         String                @id @default(uuid())
+  commentId  String
+  comment    Comment               @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  reporterId String
+  reporter   User                  @relation("ReportReporter", fields: [reporterId], references: [id], onDelete: Cascade)
+  reason     String
+  severity   ReportSeverity        @default(LOW)
+  status     ReportStatus          @default(pending)
+  resolution ModerationResolution?
+  createdAt  DateTime              @default(now())
+  resolvedAt DateTime?
+
+  @@index([commentId])
+  @@index([status])
+  @@map("reports")
+}
+
+/// Bitácora de acciones de moderación (para la pestaña "Historial").
+model ModerationLog {
+  id          String               @id @default(uuid())
+  action      ModerationResolution
+  adminId     String
+  admin       User                 @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  targetLabel String
+  reason      String
+  createdAt   DateTime             @default(now())
+
+  @@index([createdAt])
+  @@map("moderation_logs")
 }
 
 model GpsPoint {
@@ -236,7 +303,7 @@ model TrainingPlan {
   coachId     String
   name        String
   weekStart   DateTime
-  description  String?
+  description String?
   exercises   Json
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt

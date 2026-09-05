@@ -11,6 +11,7 @@ import { CommunityModule } from './modules/community/community.module.js';
 import { HealthModule } from './modules/health/health.module.js';
 import { SubscriptionsModule } from './modules/subscriptions/subscriptions.module.js';
 import { AdminModule } from './modules/admin/admin.module.js';
+import { AdminPanelModule } from './modules/admin-panel/admin-panel.module.js';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { AdminModule } from './modules/admin/admin.module.js';
     CommunityModule,
     SubscriptionsModule,
     AdminModule,
+    AdminPanelModule,
   ],
   controllers: [AppController],
   providers: [AppService],

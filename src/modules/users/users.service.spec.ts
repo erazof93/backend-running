@@ -21,6 +21,7 @@ describe('UsersService', () => {
       upsert: ReturnType<typeof vi.fn>;
       deleteMany: ReturnType<typeof vi.fn>;
     };
+    activity: { count: ReturnType<typeof vi.fn> };
   };
 
   const userRow = (over: Partial<Record<string, unknown>> = {}) => ({
@@ -30,6 +31,9 @@ describe('UsersService', () => {
     passwordHash: 'hash',
     bio: null,
     profilePicture: null,
+    role: 'CLIENTE',
+    tier: 'FREE',
+    status: 'ACTIVE',
     createdAt: new Date('2026-01-01'),
     updatedAt: new Date('2026-01-02'),
     ...over,
@@ -44,6 +48,7 @@ describe('UsersService', () => {
         upsert: vi.fn().mockResolvedValue({}),
         deleteMany: vi.fn().mockResolvedValue({ count: 1 }),
       },
+      activity: { count: vi.fn().mockResolvedValue(0) },
     };
 
     const moduleRef: TestingModule = await Test.createTestingModule({

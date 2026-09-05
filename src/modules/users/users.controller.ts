@@ -9,6 +9,7 @@ import {
   Param,
   Put,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import {
@@ -18,17 +19,85 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
+import { Role } from '@prisma/client';
 import { CurrentUser } from '../../common/decorators/current-user.decorator.js';
+import { AdminGuard } from '../../common/guards/admin.guard.js';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard.js';
 import type { AuthenticatedUser } from '../auth/strategies/jwt.strategy.js';
-import { UpdateUserDto } from './dto/update-user.dto.js';
+import { PatchUserDto } from './dto/patch-user.dto.js';
+import {
+  AdminCreateUserDto,
+  BulkActionDto,
+  ListUsersQueryDto,
+} from '../admin-panel/dto/admin-user.dto.js';
+import type {
+  ActivityItemDto,
+  ActivityPointDto,
+  AdminUserDto,
+} from '../admin-panel/admin-panel.types.js';
 import { UserProfileEntity } from './entities/user.entity.js';
+import { AdminUsersService } from '../admin-panel/users-admin.service.js';
 import { UsersService } from './users.service.js';
 
 @ApiTags('users')
 @Controller('users')
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(
+    private readonly usersService: UsersService,
+    private readonly adminUsers: AdminUsersService,
+  ) {}
+
+  // ─────────────────────────── Panel admin (ADMIN/SUPERADMIN) ───────────────
+  // Se declaran ANTES de las rutas `:id` para que `/users/activity` no matchee
+  // como `:id = "activity"`.
+
+  @Get()
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'ADMIN: listar usuarios (con filtros)' })
+  listUsers(@Query() query: ListUsersQueryDto): Promise<AdminUserDto[]> {
+    return this.adminUsers.list(query);
+  }
+
+  @Get('activity')
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'ADMIN: altas de usuarios por día (últimos 30)' })
+  usersActivity(): Promise<ActivityPointDto[]> {
+    return this.adminUsers.signupsSeries();
+  }
+
+  @Get('activity/recent')
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'ADMIN: actividades recientes (feed del dashboard)' })
+  recentActivity(): Promise<ActivityItemDto[]> {
+    return this.adminUsers.recentActivity();
+  }
+
+  @Post()
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'ADMIN: crear usuario (contraseña temporal)' })
+  @ApiResponse({ status: 201, description: 'Usuario creado' })
+  @ApiResponse({ status: 409, description: 'El email ya está registrado' })
+  createUser(@Body() dto: AdminCreateUserDto): Promise<AdminUserDto> {
+    return this.adminUsers.create(dto);
+  }
+
+  @Post('bulk-action')
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'ADMIN: acción en lote (ban / promote / delete)' })
+  bulkAction(
+    @Body() dto: BulkActionDto,
+    @CurrentUser() current: AuthenticatedUser,
+  ): Promise<{ affected: number }> {
+    return this.adminUsers.bulk(dto, current.id);
+  }
+
+  // ─────────────────────────────── Perfil / social ─────────────────────────
 
   @Get(':id')
   @ApiOperation({ summary: 'Obtener un usuario por ID' })
@@ -42,21 +111,49 @@ export class UsersController {
   @Put(':id')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Actualizar el perfil propio' })
-  @ApiParam({ name: 'id', description: 'ID del usuario (debe ser el propio)' })
-  @ApiResponse({ status: 200, type: UserProfileEntity })
+  @ApiOperation({
+    summary: 'Actualizar un usuario (propio perfil, o cualquiera si ADMIN)',
+  })
+  @ApiParam({ name: 'id', description: 'ID del usuario' })
+  @ApiResponse({ status: 200 })
   @ApiResponse({ status: 403, description: 'No puedes editar otro perfil' })
   @ApiResponse({ status: 404, description: 'Usuario no encontrado' })
   @ApiResponse({ status: 409, description: 'El email ya está registrado' })
   updateUser(
     @Param('id') id: string,
-    @Body() dto: UpdateUserDto,
+    @Body() dto: PatchUserDto,
     @CurrentUser() current: AuthenticatedUser,
-  ): Promise<UserProfileEntity> {
+  ): Promise<UserProfileEntity | AdminUserDto> {
+    const isAdmin =
+      current.role === Role.ADMIN || current.role === Role.SUPERADMIN;
+
+    if (isAdmin) {
+      return this.adminUsers.update(id, dto);
+    }
     if (current.id !== id) {
       throw new ForbiddenException('Solo puedes editar tu propio perfil');
     }
-    return this.usersService.updateUser(id, dto);
+    return this.usersService.updateUser(id, {
+      name: dto.name,
+      email: dto.email,
+      bio: dto.bio,
+      profilePicture: dto.profilePicture,
+    });
+  }
+
+  @Delete(':id')
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'ADMIN: eliminar un usuario' })
+  @ApiParam({ name: 'id', description: 'ID del usuario' })
+  @ApiResponse({ status: 200, description: 'Usuario eliminado' })
+  @ApiResponse({ status: 409, description: 'No se puede eliminar el último admin' })
+  deleteUser(
+    @Param('id') id: string,
+    @CurrentUser() current: AuthenticatedUser,
+  ): Promise<{ success: true }> {
+    return this.adminUsers.remove(id, current.id);
   }
 
   @Get(':id/activities')
